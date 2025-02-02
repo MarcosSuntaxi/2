@@ -10,15 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface User {
-  id: string
-  name: string
+  id: number
+  username: string
   email: string
-  role: string
+  role: "administrator" | "user" | "provider"
 }
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([])
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", role: "user" })
+  const [newUser, setNewUser] = useState({ username: "", email: "", password: "", role: "user" })
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         toast.success("Usuario creado exitosamente")
-        setNewUser({ name: "", email: "", password: "", role: "user" })
+        setNewUser({ username: "", email: "", password: "", role: "user" })
         fetchUsers()
       }
     } catch (error) {
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: number) => {
     try {
       const response = await fetch(`http://localhost:4000/api/users/${userId}`, {
         method: "DELETE",
@@ -114,11 +114,11 @@ export default function AdminDashboard() {
         <h2 className="text-xl font-semibold mb-2">Crear Nuevo Usuario</h2>
         <form onSubmit={handleCreateUser} className="space-y-4">
           <div>
-            <Label htmlFor="name">Nombre</Label>
+            <Label htmlFor="username">Nombre de usuario</Label>
             <Input
-              id="name"
-              value={newUser.name}
-              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              id="username"
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
               required
             />
           </div>
@@ -150,7 +150,8 @@ export default function AdminDashboard() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">Usuario</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="administrator">Administrador</SelectItem>
+                <SelectItem value="provider">Proveedor</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -162,7 +163,7 @@ export default function AdminDashboard() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nombre</TableHead>
+            <TableHead>Nombre de usuario</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Rol</TableHead>
             <TableHead>Acciones</TableHead>
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.username}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
               <TableCell>
@@ -189,11 +190,11 @@ export default function AdminDashboard() {
                       {editingUser && (
                         <form onSubmit={handleEditUser} className="space-y-4">
                           <div>
-                            <Label htmlFor="edit-name">Nombre</Label>
+                            <Label htmlFor="edit-username">Nombre de usuario</Label>
                             <Input
-                              id="edit-name"
-                              value={editingUser.name}
-                              onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                              id="edit-username"
+                              value={editingUser.username}
+                              onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
                               required
                             />
                           </div>
@@ -218,7 +219,8 @@ export default function AdminDashboard() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="user">Usuario</SelectItem>
-                                <SelectItem value="admin">Administrador</SelectItem>
+                                <SelectItem value="administrator">Administrador</SelectItem>
+                                <SelectItem value="provider">Proveedor</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>

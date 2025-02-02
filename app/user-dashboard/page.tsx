@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { useAuth } from "@/contexts/auth-context"
 
 interface UserProfile {
   id: string
@@ -14,7 +13,6 @@ interface UserProfile {
 }
 
 export default function UserDashboard() {
-  const { user } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [formData, setFormData] = useState({
     name: "",
@@ -23,16 +21,30 @@ export default function UserDashboard() {
   })
 
   useEffect(() => {
-    if (user) {
-      setProfile(user)
-      setFormData({ name: user.name, email: user.email, password: "" })
+    fetchUserProfile()
+  }, [])
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch("http://localhost:3002/api/user-profile", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(data)
+        setFormData({ name: data.name, email: data.email, password: "" })
+      }
+    } catch (error) {
+      toast.error("Error al obtener el perfil")
     }
-  }, [user])
+  }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch(`http://localhost:4000/api/users/${profile?.id}`, {
+      const response = await fetch("http://localhost:3002/api/user-profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -43,8 +55,7 @@ export default function UserDashboard() {
 
       if (response.ok) {
         toast.success("Perfil actualizado exitosamente")
-        const updatedUser = await response.json()
-        setProfile(updatedUser)
+        fetchUserProfile()
       }
     } catch (error) {
       toast.error("Error al actualizar el perfil")

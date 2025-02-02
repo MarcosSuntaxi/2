@@ -13,13 +13,26 @@ export function AuthButtons() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [loginData, setLoginData] = useState({ email: "", password: "" })
-  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" })
+  const [registerData, setRegisterData] = useState({ username: "", email: "", password: "" })
   const router = useRouter()
   const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const response = await fetch("http://localhost:4000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginData.email, password: loginData.password }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Inicio de sesión fallido")
+      }
+
+      const { token, user } = await response.json()
+      localStorage.setItem("token", token)
+      localStorage.setItem("userRole", user.role)
       await login(loginData.email, loginData.password)
       setIsLoginOpen(false)
     } catch (error) {
@@ -60,10 +73,9 @@ export function AuthButtons() {
           </DialogHeader>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Nombre de usuario</Label>
               <Input
-                id="email"
-                type="email"
+                id="username"
                 value={loginData.email}
                 onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                 required
@@ -94,11 +106,11 @@ export function AuthButtons() {
           </DialogHeader>
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <Label htmlFor="name">Nombre</Label>
+              <Label htmlFor="username">Nombre de usuario</Label>
               <Input
-                id="name"
-                value={registerData.name}
-                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
+                id="username"
+                value={registerData.username}
+                onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
                 required
               />
             </div>

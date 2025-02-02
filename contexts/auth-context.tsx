@@ -5,15 +5,15 @@ import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 interface User {
-  id: string
-  name: string
+  id: number
+  username: string
   email: string
-  role: "user" | "admin"
+  role: "administrator" | "user" | "provider"
 }
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<void>
   logout: () => void
   isLoading: boolean
 }
@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     setIsLoading(true)
     try {
       const response = await fetch("http://localhost:4000/api/login", {
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       })
 
       if (!response.ok) {
@@ -72,8 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const { token, user } = await response.json()
       localStorage.setItem("token", token)
+      localStorage.setItem("userRole", user.role)
       setUser(user)
-      router.push(user.role === "admin" ? "/admin-dashboard" : "/user-dashboard")
+      router.push(user.role === "administrator" ? "/admin-dashboard" : "/user-dashboard")
     } catch (error) {
       console.error("Login error:", error)
       throw error
@@ -84,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("token")
+    localStorage.removeItem("userRole")
     setUser(null)
     router.push("/")
   }
