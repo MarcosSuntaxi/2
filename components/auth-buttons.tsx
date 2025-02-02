@@ -8,42 +8,58 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { API_ROUTES } from "@/config/api"
 
 export function AuthButtons() {
   const [isLoginOpen, setIsLoginOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [loginData, setLoginData] = useState({ email: "", password: "" })
-  const [registerData, setRegisterData] = useState({ username: "", email: "", password: "" })
+  const [registerData, setRegisterData] = useState({ username: "", email: "", password: "", role: "user" })
   const router = useRouter()
   const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:4000/api/login", {
+      console.log("Iniciando proceso de login...")
+      const response = await fetch(API_ROUTES.LOGIN, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: loginData.email, password: loginData.password }),
+        body: JSON.stringify(loginData),
       })
 
+      console.log("Respuesta del servidor:", response.status)
+
       if (!response.ok) {
-        throw new Error("Inicio de sesión fallido")
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Inicio de sesión fallido")
       }
 
-      const { token, user } = await response.json()
+      const data = await response.json()
+      console.log("Datos recibidos del servidor:", data)
+
+      const { token, user } = data
       localStorage.setItem("token", token)
       localStorage.setItem("userRole", user.role)
+
+      console.log("Llamando a la función login del contexto...")
       await login(loginData.email, loginData.password)
+
+      console.log("Login completado, cerrando diálogo...")
       setIsLoginOpen(false)
+
+      console.log("Redirigiendo a:", user.role === "administrator" ? "/admin-dashboard" : "/user-dashboard")
+      router.push(user.role === "administrator" ? "/admin-dashboard" : "/user-dashboard")
     } catch (error) {
-      toast.error("Error en el inicio de sesión")
+      console.error("Error de inicio de sesión:", error)
+      toast.error(error.message || "Error en el inicio de sesión")
     }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch("http://localhost:4000/api/register", {
+      const response = await fetch(API_ROUTES.REGISTER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registerData),
@@ -73,9 +89,10 @@ export function AuthButtons() {
           </DialogHeader>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <Label htmlFor="username">Nombre de usuario</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
+                id="email"
+                type="email"
                 value={loginData.email}
                 onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                 required
@@ -133,6 +150,18 @@ export function AuthButtons() {
                 onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
                 required
               />
+            </div>
+            <div>
+              <Label htmlFor="role">Rol</Label>
+              <select
+                id="role"
+                value={registerData.role}
+                onChange={(e) => setRegisterData({ ...registerData, role: e.target.value })}
+                className="w-full p-2 border rounded"
+              >
+                <option value="user">Usuario</option>
+                <option value="administrator">Administrador</option>
+              </select>
             </div>
             <Button type="submit">Registrarse</Button>
           </form>

@@ -1,19 +1,19 @@
 "use client"
 
-import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { API_ROUTES } from "@/config/api"
 
 interface User {
   id: number
   username: string
   email: string
-  role: "administrator" | "user" | "provider"
+  role: "administrator" | "user"
 }
 
 interface AuthContextType {
   user: User | null
-  login: (username: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
   isLoading: boolean
 }
@@ -26,7 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem("token")
     if (token) {
       validateToken(token)
@@ -37,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const validateToken = async (token: string) => {
     try {
-      const response = await fetch("http://localhost:4000/api/users/me", {
+      const response = await fetch(API_ROUTES.GET_USER, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -47,34 +46,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData)
       } else {
         localStorage.removeItem("token")
+        localStorage.removeItem("userRole")
       }
     } catch (error) {
       console.error("Error validating token:", error)
       localStorage.removeItem("token")
+      localStorage.removeItem("userRole")
     }
     setIsLoading(false)
   }
 
-  const login = async (username: string, password: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      const response = await fetch("http://localhost:4000/api/login", {
+      console.log("Iniciando login en el contexto...")
+      const response = await fetch(API_ROUTES.LOGIN, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       })
 
+      console.log("Respuesta del servidor (contexto):", response.status)
+
       if (!response.ok) {
-        throw new Error("Login failed")
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Login failed")
       }
 
       const { token, user } = await response.json()
+      console.log("Datos del usuario recibidos:", user)
+
       localStorage.setItem("token", token)
       localStorage.setItem("userRole", user.role)
       setUser(user)
-      router.push(user.role === "administrator" ? "/admin-dashboard" : "/user-dashboard")
+
+      console.log("Usuario establecido en el contexto:", user)
+      console.log(
+        "Redirigiendo desde el contexto a:",
+        user.role === "administrator" ? "/admin-dashboard" : "/user-dashboard",
+      )
+
+      // Usamos setTimeout para asegurarnos de que la redirección ocurra después de que React haya actualizado el estado
+      setTimeout(() => {
+        if (user.role === "administrator") {
+          router.push("/admin-dashboard")
+        } else {
+          router.push("/user-dashboard")
+        }
+      }, 0)
     } catch (error) {
       console.error("Login error:", error)
       throw error

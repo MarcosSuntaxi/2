@@ -13,7 +13,7 @@ interface User {
   id: number
   username: string
   email: string
-  role: "administrator" | "user" | "provider"
+  role: "administrator" | "user"
 }
 
 export default function AdminDashboard() {
@@ -151,7 +151,6 @@ export default function AdminDashboard() {
               <SelectContent>
                 <SelectItem value="user">Usuario</SelectItem>
                 <SelectItem value="administrator">Administrador</SelectItem>
-                <SelectItem value="provider">Proveedor</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -212,7 +211,9 @@ export default function AdminDashboard() {
                             <Label htmlFor="edit-role">Rol</Label>
                             <Select
                               value={editingUser.role}
-                              onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+                              onValueChange={(value) =>
+                                setEditingUser({ ...editingUser, role: value as "administrator" | "user" })
+                              }
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un rol" />
@@ -220,7 +221,6 @@ export default function AdminDashboard() {
                               <SelectContent>
                                 <SelectItem value="user">Usuario</SelectItem>
                                 <SelectItem value="administrator">Administrador</SelectItem>
-                                <SelectItem value="provider">Proveedor</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
